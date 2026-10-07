@@ -141,7 +141,13 @@
     // Líneas de referencia y polos
     s += '<g class="capa-lineas">';
     D.lineas.forEach(function (l) {
-      if (l.tipo === 'linea') {
+      if (l.tipo === 'linea' && l.vertical) {
+        var xx = G.x(l.lon || 0);
+        s += '<g class="linea meridiano" data-linea="' + l.id + '" style="--l:' + (l.color || '#2E9E5B') + '">';
+        s += '<line x1="' + xx + '" x2="' + xx + '" y1="0" y2="' + H + '"/>';
+        s += '<text class="etq etq-linea" data-etq="' + l.id + '" x="' + (xx + 12) + '" y="' + G.y(-50) + '">' + esc(l.nombre) + ' (0°)</text>';
+        s += '</g>';
+      } else if (l.tipo === 'linea') {
         var yy = G.y(l.lat);
         s += '<g class="linea' + (l.id === 'ecuador' ? ' ecuador' : '') + '" data-linea="' + l.id + '" style="--l:' + (l.color || '#E53935') + '">';
         s += '<line x1="0" x2="' + W + '" y1="' + yy + '" y2="' + yy + '"/>';
@@ -229,13 +235,17 @@
     }
 
     // Busca la línea o polo más cercano a una latitud (con tolerancia en grados).
-    function lineaCercana(lat, tol) {
+    // (el meridiano es vertical: se mide por longitud; cerca de un polo gana el polo)
+    function lineaCercana(lat, lon, tol) {
       var mejor = null, dist = 999;
       D.lineas.forEach(function (l) {
-        if (l.tipo !== 'linea' && l.tipo !== 'polo') return;
-        var d = Math.abs(lat - l.lat);
-        var t = l.tipo === 'polo' ? tol * 1.4 : tol;
-        if (d <= t && d < dist) { dist = d; mejor = l.id; }
+        if (l.tipo === 'polo' && Math.abs(lat - l.lat) <= tol * 1.4) { mejor = l.id; dist = -1; }
+      });
+      if (dist < 0) return mejor;
+      D.lineas.forEach(function (l) {
+        if (l.tipo !== 'linea') return;
+        var d = l.vertical ? Math.abs(lon - (l.lon || 0)) : Math.abs(lat - l.lat);
+        if (d <= tol && d < dist) { dist = d; mejor = l.id; }
       });
       return mejor;
     }
@@ -260,7 +270,7 @@
         // unos 28 px de pantalla, entre 6° y 11°
         var tol = Math.max(6, Math.min(11, 28 / escala / G.ESCALA));
         info.tipo = 'linea';
-        info.id = lineaCercana(info.lat, tol);
+        info.id = lineaCercana(info.lat, info.lon, tol);
       } else {
         var el = objetivo && objetivo.closest ? objetivo.closest('[data-region]') : null;
         var mar = objetivo && objetivo.closest ? objetivo.closest('[data-mar]') : null;
@@ -304,7 +314,17 @@
         });
         if (fija) sel('[data-anillo="' + id + '"]').forEach(function (el) { el.classList.add('visible', 'etq-fija'); });
       },
-      etiquetas: function (ids) { ids.forEach(api.etiqueta); },
+      etiquetas: function (ids) { ids.forEach(function (id) { api.etiqueta(id); }); },
+      // Muestra un texto cualquiera en el lugar del nombre (para el "mapa tramposo").
+      etiquetaTexto: function (id, texto, clase) {
+        sel('[data-etq="' + id + '"]').forEach(function (el) {
+          var t = el.tagName.toLowerCase() === 'text' ? el : el.querySelector('text');
+          if (t) t.textContent = texto;
+          el.classList.add('visible', 'etq-fija');
+          el.classList.remove('etq-bien', 'etq-mal');
+          if (clase) el.classList.add(clase);
+        });
+      },
       limpiar: function () {
         ['brilla', 'correcto', 'equivocado', 'visible'].forEach(function (c) {
           sel('.' + c).forEach(function (el) {

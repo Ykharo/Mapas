@@ -11,10 +11,10 @@ externas), así que se publica gratis en GitHub Pages.
 
 | Sección | Qué se practica |
 |---|---|
-| 🧭 1. Puntos cardinales | Cuadrícula con letras y números, rosa de los vientos, moverse por casillas |
-| 🌐 2. Líneas de la Tierra | Ecuador, trópicos, círculos polares, polos y hemisferios |
-| 🗺️ 3. Continentes y océanos | Tocar en el mapa y nombrar lo que se ilumina (las tres Américas por separado) |
-| 📍 4. Ubicar en el planisferio | Preguntas que combinan todo (Chile, océanos vecinos, hemisferios…) |
+| 🧭 1. Puntos cardinales | Cuadrícula con letras y números, rosa de los vientos, rutas de varios pasos ("avanza 4 espacios al norte, luego 3 al este…") |
+| 🌐 2. Líneas de la Tierra | Ecuador, trópicos, círculos polares, meridiano de Greenwich, polos y hemisferios |
+| 🗺️ 3. Continentes y océanos | Los 6 continentes (América como uno solo, con sus tres partes) y los 5 océanos; tocar, nombrar y "mapa tramposo" |
+| 📍 4. Ubicar en el planisferio | Preguntas y adivinanzas que combinan todo (Chile, océanos vecinos, Ártico/Antártico…) |
 
 Cada sección tiene cuatro modos:
 

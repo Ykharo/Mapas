@@ -322,6 +322,12 @@
         cuadActual.marcar(['C3'], 'correcto');
         mostrarInfo('Casilla C3', 'Columna C y fila 3: ahí está la iglesia ⛪.', false);
         break;
+      case 'cuadricula-ruta':
+        cuadActual = Cuadricula.crear(cont, {});
+        cuadActual.marcar(['B2'], 'inicio');
+        cuadActual.camino(['C2', 'D2', 'D3']);
+        cuadActual.marcar(['D3'], 'correcto');
+        break;
       case 'cuadricula-explorar':
         cuadActual = Cuadricula.crear(cont, {
           alTocar: function (id, lugar) {
@@ -362,6 +368,23 @@
         break;
       case 'mapa-explorar':
         m = Mapa.crear(cont, { modo: 'explorar', alTocar: explorarRegion });
+        break;
+      case 'mapa-artico':
+        m = Mapa.crear(cont, { modo: 'explorar', alTocar: explorarRegion });
+        m.resaltar('artico', 'brilla');
+        m.resaltar('antartico', 'brilla');
+        fijas(['artico', 'antartico', 'antartica']);
+        break;
+      case 'mapa-polares':
+        m = Mapa.crear(cont, { modo: 'lineas', lineas: true, alTocar: explorarLinea });
+        m.resaltar('circulo-artico', 'brilla');
+        m.resaltar('circulo-antartico', 'brilla');
+        fijas(['circulo-artico', 'circulo-antartico', 'polo-norte', 'polo-sur']);
+        break;
+      case 'mapa-greenwich':
+        m = Mapa.crear(cont, { modo: 'lineas', lineas: true, alTocar: explorarLinea });
+        m.resaltar('greenwich', 'brilla');
+        fijas(['greenwich', 'bordes']);
         break;
       case 'mapa-rosa':
         m = Mapa.crear(cont, { modo: 'explorar', alTocar: explorarRegion });
@@ -414,7 +437,10 @@
         '</header>' +
         '<div class="pregunta">' +
           '<button class="btn-voz" data-accion="leer-pregunta" aria-label="Escuchar la pregunta">🔊</button>' +
-          '<p class="pregunta-texto">' + esc(q.texto) + '</p>' +
+          '<div class="pregunta-cuerpo">' +
+            '<p class="pregunta-texto">' + esc(q.texto) + '</p>' +
+            (q.pasos ? '<ol class="pasos-ruta">' + q.pasos.map(function (p) { var corto = p.replace(/^(Luego )?avanza /i, ''); return '<li>' + esc(corto.charAt(0).toUpperCase() + corto.slice(1)) + '</li>'; }).join('') + '</ol>' : '') +
+          '</div>' +
         '</div>' +
         '<div class="visual" id="visual"></div>' +
         '<div class="respuestas" id="respuestas"></div>' +
@@ -434,10 +460,11 @@
         lineas: !!mo.lineas,
         alTocar: q.tipo === 'tocar' ? responderMapa : null
       });
-      if (mo.foco) {
-        mapaActual.resaltar(mo.foco, 'brilla');
-        if (Mapa.infoContinente(mo.foco)) mapaActual.foco(true);
-      }
+      [].concat(mo.foco || []).forEach(function (id) {
+        mapaActual.resaltar(id, 'brilla');
+        if (Mapa.infoContinente(id)) mapaActual.foco(true);
+      });
+      if (mo.tramposo) mapaActual.etiquetaTexto(mo.tramposo.id, mo.tramposo.texto);
       if (mo.marcar === 'chile') mapaActual.marcarChile();
     }
 
@@ -494,13 +521,14 @@
       return;
     }
     if (mapaActual && juego.modo === 'prueba') mapaActual.resaltar(toque, 'elegida');
-    finalizar(toque === q.respuesta, Mapa.nombreDe(toque), { toque: toque });
+    var validas = q.respuestasValidas || [q.respuesta];
+    finalizar(validas.indexOf(toque) >= 0, Mapa.nombreDe(toque), { toque: toque });
   }
 
   function textoRespuesta(q) {
     if (q.tipo === 'opciones') return q.respuesta;
     if (q.vista === 'cuadricula') return 'casilla ' + q.respuesta;
-    return Mapa.nombreDe(q.respuesta);
+    return q.nombreRespuesta || Mapa.nombreDe(q.respuesta);
   }
 
   function finalizar(correcto, dada, extra) {
@@ -527,10 +555,18 @@
       var m = mapaActual;
       if (q.tipo === 'tocar') {
         if (!correcto && extra.toque) { m.resaltar(extra.toque, 'equivocado'); m.etiqueta(extra.toque); }
-        m.resaltar(q.respuesta, 'correcto');
-        m.etiqueta(q.respuesta);
+        (q.respuestasValidas || [q.respuesta]).forEach(function (id) {
+          m.resaltar(id, 'correcto');
+          m.etiqueta(id);
+        });
       } else {
-        if (q.mapa && q.mapa.foco) m.etiqueta(q.mapa.foco);
+        var mo = q.mapa || {};
+        if (mo.tramposo) {
+          // Se corrige el nombre: queda el verdadero, en verde.
+          m.etiquetaTexto(mo.tramposo.id, mo.tramposo.correcto + (mo.tramposo.texto === mo.tramposo.correcto ? ' ✔' : ''), 'etq-bien');
+        } else {
+          [].concat(mo.foco || []).forEach(function (id) { m.etiqueta(id); });
+        }
         (q.mostrar || []).forEach(function (id) { m.resaltar(id, 'correcto'); m.etiqueta(id); });
       }
     }
@@ -787,7 +823,7 @@
       case 'siguiente': siguiente(); break;
       case 'leer-pregunta': {
         var q = juego && preguntaActual();
-        if (q) Voz.hablar(q.texto + (q.tipo === 'opciones' ? '. ' + q.opciones.join('. ') : ''));
+        if (q) Voz.hablar(q.texto + (q.pasos ? ' ' + q.pasos.join(' ') : '') + (q.tipo === 'opciones' ? '. ' + q.opciones.join('. ') : ''));
         break;
       }
       case 'leer-correccion': if (juego && juego.textoCorreccion) Voz.hablar(juego.textoCorreccion); break;

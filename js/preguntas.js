@@ -42,7 +42,8 @@
       colas.forEach(function (c) {
         while (res.length < n && c.length) {
           var q = c.shift();
-          if (!vistos[q.texto]) { vistos[q.texto] = 1; res.push(q); break; }
+          var clave = q.clave || q.texto;
+          if (!vistos[clave]) { vistos[clave] = 1; res.push(q); break; }
         }
       });
     }
@@ -185,9 +186,9 @@
           var dx = mx > 0 ? DIRS[2] : DIRS[3];
           var dy = my > 0 ? DIRS[1] : DIRS[0];
           for (var i = 0; i < Math.abs(mx); i++) { cx += dx.dc; camino.push(K.celda(cx, cy)); }
-          if (mx) { instrucciones.push(plural(Math.abs(mx), 'casilla') + ' al ' + dx.id); pasos.push(Math.abs(mx) + ' al ' + dx.id + ' → ' + K.celda(cx, cy)); }
+          if (mx) { instrucciones.push(plural(Math.abs(mx), 'espacio') + ' al ' + dx.id); pasos.push(Math.abs(mx) + ' al ' + dx.id + ' → ' + K.celda(cx, cy)); }
           for (var j = 0; j < Math.abs(my); j++) { cy += dy.df; camino.push(K.celda(cx, cy)); }
-          if (my) { instrucciones.push(plural(Math.abs(my), 'casilla') + ' al ' + dy.id); pasos.push(Math.abs(my) + ' al ' + dy.id + ' → ' + K.celda(cx, cy)); }
+          if (my) { instrucciones.push(plural(Math.abs(my), 'espacio') + ' al ' + dy.id); pasos.push(Math.abs(my) + ' al ' + dy.id + ' → ' + K.celda(cx, cy)); }
           var orden = instrucciones.join(' y ');
           var Y2 = K.porCelda[destino];
           var base = 'Parte en ' + X.nombre + ' ' + X.emoji + '. Avanza ' + orden + '.';
@@ -234,7 +235,91 @@
         });
       }
     }
-    return [grupos.vecino, grupos.moverOpc, grupos.moverToca, grupos.casilla, grupos.queHay, grupos.direccion, grupos.tocaCelda, grupos.tocaVecina];
+    generarRutas(K, C, grupos);
+    return [grupos.vecino, grupos.moverOpc, grupos.moverToca, grupos.casilla, grupos.queHay, grupos.direccion,
+      grupos.tocaCelda, grupos.tocaVecina, grupos.rutaOpc, grupos.rutaToca, grupos.rutaOpc2];
+  }
+
+  /* Rutas de varios pasos, como en el cuaderno:
+     "Comienza en el cuadrado. Avanza 4 espacios al norte. Luego 4 al este..." */
+  function generarRutas(K, C, grupos) {
+    grupos.rutaOpc = []; grupos.rutaToca = []; grupos.rutaOpc2 = [];
+    var vistos = {};
+    var todos = C.lugares.map(etq);
+
+    function maxPasos(c, f, d) {
+      var n = 0;
+      while (K.celda(c + d.dc * (n + 1), f + d.df * (n + 1))) n++;
+      return n;
+    }
+    // Recorre los tramos (opcionalmente cambiando direcciones) y devuelve la casilla final.
+    function recorrer(p, tramos, cambio) {
+      var c = p.c, f = p.f;
+      for (var i = 0; i < tramos.length; i++) {
+        var d = cambio ? cambio(tramos[i].d, i) : tramos[i].d;
+        c += d.dc * tramos[i].n; f += d.df * tramos[i].n;
+        if (!K.celda(c, f)) return null;
+      }
+      return K.celda(c, f);
+    }
+    var OPUESTA = { norte: DIRS[1], sur: DIRS[0], este: DIRS[3], oeste: DIRS[2] };
+
+    C.lugares.forEach(function (X) {
+      var p = K.pos(X.celda);
+      for (var intento = 0; intento < 60; intento++) {
+        var nTramos = 3 + Math.floor(Math.random() * 2);
+        var c = p.c, f = p.f, previa = null, tramos = [], camino = [], ok = true;
+        for (var s = 0; s < nTramos; s++) {
+          var posibles = DIRS.filter(function (d) {
+            return d !== previa && !(previa && d === OPUESTA[previa.id]) && maxPasos(c, f, d) > 0;
+          });
+          if (!posibles.length) { ok = false; break; }
+          var d = posibles[Math.floor(Math.random() * posibles.length)];
+          var n = 1 + Math.floor(Math.random() * Math.min(4, maxPasos(c, f, d)));
+          for (var i = 0; i < n; i++) { c += d.dc; f += d.df; camino.push(K.celda(c, f)); }
+          tramos.push({ d: d, n: n });
+          previa = d;
+        }
+        if (!ok) continue;
+        var destino = K.celda(c, f);
+        var Y = K.porCelda[destino];
+        if (!Y || Y === X || camino.indexOf(X.celda) >= 0) continue;
+        var pasos = tramos.map(function (t, i) {
+          return (i === 0 ? 'Avanza ' : 'Luego avanza ') + plural(t.n, 'espacio') + ' al ' + t.d.id + '.';
+        });
+        var clave = X.id + ':' + pasos.join(' ');
+        if (vistos[clave]) continue;
+        vistos[clave] = 1;
+
+        // Errores típicos: confundir norte/sur, este/oeste, o la última dirección.
+        var errores = [
+          recorrer(p, tramos, function (d) { return d.dc === 0 ? OPUESTA[d.id] : d; }),
+          recorrer(p, tramos, function (d) { return d.df === 0 ? OPUESTA[d.id] : d; }),
+          recorrer(p, tramos, function (d, i) { return i === tramos.length - 1 ? OPUESTA[d.id] : d; }),
+          recorrer(p, tramos.slice(0, -1))
+        ].map(function (ce) { return ce && K.porCelda[ce] ? etq(K.porCelda[ce]) : null; })
+          .filter(function (v) { return v && v !== etq(Y) && v !== etq(X); });
+
+        var base = {
+          seccion: 1, vista: 'cuadricula', clave: clave, pasos: pasos,
+          explicacion: 'Siguiendo los pasos desde ' + X.celda + ' llegas a ' + destino + ': ahí está ' + Y.nombre + '.',
+          tema: 'Seguir instrucciones con puntos cardinales',
+          marcar: [X.celda], correctas: [destino], camino: camino
+        };
+        var qo = Object.assign({}, base, {
+          tipo: 'opciones',
+          texto: 'Comienza en ' + X.nombre + ' ' + X.emoji + ' y sigue los pasos. ¿Dónde llegas?',
+          opciones: armarOpciones(etq(Y), errores, todos.filter(function (t) { return t !== etq(X); }), 4),
+          respuesta: etq(Y)
+        });
+        (grupos.rutaOpc.length <= grupos.rutaOpc2.length ? grupos.rutaOpc : grupos.rutaOpc2).push(qo);
+        grupos.rutaToca.push(Object.assign({}, base, {
+          tipo: 'tocar', clave: clave + ':tocar',
+          texto: 'Comienza en ' + X.nombre + ' ' + X.emoji + ' y sigue los pasos. Toca dónde llegas.',
+          respuesta: destino
+        }));
+      }
+    });
   }
 
   /* ================= SECCIÓN 2: líneas de referencia ================= */
@@ -243,6 +328,7 @@
     if (l.tipo === 'polo') return 'Polo Norte y Polo Sur';
     if (l.tipo === 'hemisferio') return 'Hemisferios';
     if (l.id === 'cancer' || l.id === 'capricornio') return 'Trópicos';
+    if (l.vertical) return 'Meridiano de Greenwich';
     return 'Círculos polares';
   }
 
@@ -286,26 +372,84 @@
 
   function enFrase(nombreOceano) { return nombreOceano.replace('Océano', 'océano'); }
 
+  // Nombres de los 6 continentes (América cuenta como uno solo).
+  function seisContinentes() {
+    return [D.america.nombre].concat(D.continentes.filter(function (c) { return AMERICAS.indexOf(c.id) < 0; })
+      .map(function (c) { return c.nombre; }));
+  }
+
   function generarSeccion3() {
-    var tc = [], nc = [], to = [], no = [];
-    var nombresC = D.continentes.map(function (c) { return c.nombre; });
+    var tc = [], nc = [], to = [], no = [], tramposo = [];
+    var nombres6 = seisContinentes();
+    var partesAm = D.continentes.filter(function (c) { return AMERICAS.indexOf(c.id) >= 0; });
     var nombresO = D.oceanos.map(function (o) { return o.nombre; });
     D.continentes.forEach(function (c) {
+      var esParte = AMERICAS.indexOf(c.id) >= 0;
       tc.push({
         seccion: 3, tipo: 'tocar', vista: 'mapa', mapa: { modo: 'continentes' },
         texto: 'Toca ' + c.nombre + '.', respuesta: c.id,
         explicacion: c.nombre + ': ' + c.info.charAt(0).toLowerCase() + c.info.slice(1),
-        tema: AMERICAS.indexOf(c.id) >= 0 ? 'Las tres Américas' : 'Continentes'
+        tema: esParte ? 'Las tres Américas' : 'Continentes'
       });
-      var cercanos = AMERICAS.indexOf(c.id) >= 0
-        ? D.continentes.filter(function (o) { return AMERICAS.indexOf(o.id) >= 0; }).map(function (o) { return o.nombre; })
-        : [];
-      nc.push({
+      nc.push(esParte ? {
+        seccion: 3, tipo: 'opciones', vista: 'mapa', mapa: { modo: 'ninguno', foco: c.id },
+        texto: '¿Qué parte de América brilla en el mapa?',
+        opciones: mezclar(partesAm.map(function (o) { return o.nombre; })), respuesta: c.nombre,
+        explicacion: 'Es ' + c.nombre + '. ' + c.info,
+        tema: 'Las tres Américas'
+      } : {
         seccion: 3, tipo: 'opciones', vista: 'mapa', mapa: { modo: 'ninguno', foco: c.id },
         texto: '¿Qué continente brilla en el mapa?',
-        opciones: armarOpciones(c.nombre, cercanos, nombresC, 4), respuesta: c.nombre,
+        opciones: armarOpciones(c.nombre, [], nombres6, 4), respuesta: c.nombre,
         explicacion: 'Es ' + c.nombre + '. ' + c.info,
-        tema: AMERICAS.indexOf(c.id) >= 0 ? 'Las tres Américas' : 'Continentes'
+        tema: 'Continentes'
+      });
+    });
+    // América completa (un solo continente)
+    tc.push({
+      seccion: 3, tipo: 'tocar', vista: 'mapa', mapa: { modo: 'continentes' },
+      texto: 'Toca el continente americano (cualquiera de sus partes).', respuesta: 'america',
+      respuestasValidas: AMERICAS.slice(), nombreRespuesta: D.america.nombre,
+      explicacion: D.america.info, tema: 'Las tres Américas'
+    });
+    nc.push({
+      seccion: 3, tipo: 'opciones', vista: 'mapa', mapa: { modo: 'ninguno', foco: AMERICAS.slice() },
+      texto: '¿Qué continente brilla en el mapa?',
+      opciones: armarOpciones(D.america.nombre, [], nombres6, 4), respuesta: D.america.nombre,
+      explicacion: D.america.info, tema: 'Las tres Américas'
+    });
+
+    // Mapa tramposo: ¿el nombre está bien puesto?
+    var zonas = D.continentes.filter(function (c) { return AMERICAS.indexOf(c.id) < 0; })
+      .map(function (c) { return { id: c.id, nombre: c.nombre, tipo: 'continente' }; })
+      .concat([{ id: 'sudamerica', nombre: D.america.nombre, tipo: 'continente' }])
+      .concat(D.oceanos.map(function (o) { return { id: o.id, nombre: o.nombre, tipo: 'oceano' }; }));
+    // Errores "tramposos" típicos
+    var TRAMPAS = {
+      artico: ['Océano Antártico'], antartico: ['Océano Ártico'],
+      pacifico: ['Océano Atlántico'], atlantico: ['Océano Pacífico'],
+      europa: ['África', 'Asia'], africa: ['Europa'], asia: ['Europa', 'Oceanía'], indico: ['Asia', 'Océano Pacífico']
+    };
+    var todosNombres = nombres6.concat(nombresO);
+    zonas.forEach(function (z) {
+      var queEs = (z.tipo === 'oceano' ? 'el ' + enFrase(z.nombre) : z.nombre);
+      tramposo.push({
+        seccion: 3, tipo: 'opciones', vista: 'mapa', clave: 'tramposo:' + z.id + ':ok',
+        mapa: { modo: 'ninguno', foco: z.id, tramposo: { id: z.id, texto: z.nombre, correcto: z.nombre } },
+        texto: '🕵️ Mapa tramposo: ¿está bien puesto el nombre de lo que brilla?',
+        opciones: ['Sí, está bien', 'No, está mal'], respuesta: 'Sí, está bien',
+        explicacion: '¡Sí! Ahí está ' + queEs + '.', tema: z.tipo === 'oceano' ? 'Océanos' : 'Continentes'
+      });
+      var malos = (TRAMPAS[z.id] || []).concat(mezclar(todosNombres.filter(function (n) { return n !== z.nombre; })).slice(0, 2));
+      unicos(malos).slice(0, 3).forEach(function (malo) {
+        tramposo.push({
+          seccion: 3, tipo: 'opciones', vista: 'mapa', clave: 'tramposo:' + z.id + ':' + malo,
+          mapa: { modo: 'ninguno', foco: z.id, tramposo: { id: z.id, texto: malo, correcto: z.nombre } },
+          texto: '🕵️ Mapa tramposo: ¿está bien puesto el nombre de lo que brilla?',
+          opciones: ['Sí, está bien', 'No, está mal'], respuesta: 'No, está mal',
+          explicacion: 'Ahí no dice bien: ese es ' + queEs + ', no ' + malo.replace('Océano', 'el océano') + '.',
+          tema: (z.id === 'artico' || z.id === 'antartico') ? 'Ártico y Antártico' : (z.tipo === 'oceano' ? 'Océanos' : 'Continentes')
+        });
       });
     });
     D.oceanos.forEach(function (o) {
@@ -324,7 +468,7 @@
       });
     });
     var extras = extrasDe(D.preguntas.seccion3, 3, { modo: 'ninguno' });
-    return [tc, nc, to, no, extras];
+    return [tc, nc, to, no, tramposo, extras];
   }
 
   /* ================= SECCIÓN 4 y preguntas escritas a mano ================= */
@@ -340,13 +484,16 @@
       if (p.tipo === 'tocar') {
         if (p.capa !== 'continentes' && p.capa !== 'oceanos') { console.warn(donde + ': "capa" debe ser "continentes" u "oceanos".'); return; }
         var lista2 = p.capa === 'continentes' ? D.continentes : D.oceanos;
-        if (!lista2.some(function (z) { return z.id === p.respuesta; })) { console.warn(donde + ': la respuesta "' + p.respuesta + '" no es un id válido.'); return; }
-        res.push({
+        var esAmerica = p.capa === 'continentes' && p.respuesta === 'america';
+        if (!esAmerica && !lista2.some(function (z) { return z.id === p.respuesta; })) { console.warn(donde + ': la respuesta "' + p.respuesta + '" no es un id válido.'); return; }
+        var qt = {
           seccion: seccion, tipo: 'tocar', vista: 'mapa',
           mapa: { modo: p.capa },
           texto: p.texto, respuesta: p.respuesta,
           explicacion: p.explicacion || '', tema: p.tema || 'Ubicar en el planisferio'
-        });
+        };
+        if (esAmerica) { qt.respuestasValidas = AMERICAS.slice(); qt.nombreRespuesta = D.america.nombre; }
+        res.push(qt);
       } else {
         if (!Array.isArray(p.opciones) || p.opciones.length < 2) { console.warn(donde + ': necesita al menos 2 opciones.'); return; }
         if (p.opciones.indexOf(p.respuesta) === -1) { console.warn(donde + ': la respuesta no está entre las opciones.'); return; }

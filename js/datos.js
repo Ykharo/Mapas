@@ -40,16 +40,25 @@ window.DATOS = {
     { id: "africa",        nombre: "África",            color: "#F6C445", info: "La cruzan el Ecuador y los dos trópicos." },
     { id: "asia",          nombre: "Asia",              color: "#E8705A", info: "Es el continente más grande." },
     { id: "oceania",       nombre: "Oceanía",           color: "#3CB9A8", info: "Está formada por Australia y muchas islas." },
-    { id: "antartica",     nombre: "Antártica",         color: "#F4F7FB", info: "Está en el Polo Sur, cubierta de hielo." }
+    { id: "antartica",     nombre: "Antártica",         color: "#F4F7FB", info: "Está en el extremo sur, en el Polo Sur. Está cubierta de hielo." }
   ],
+
+  /* Como en el cuaderno: hay 6 continentes y América es UNO solo,
+     que se divide en tres partes (del Norte, Central y del Sur). */
+  america: {
+    nombre: "América",
+    info: "Es un solo continente que se divide en tres partes: América del Norte, América Central y América del Sur.",
+    partes: ["norteamerica", "centroamerica", "sudamerica"]
+  },
+  totalContinentes: 6,
 
   /* ---------------- OCÉANOS ---------------- */
   oceanos: [
     { id: "pacifico",  nombre: "Océano Pacífico",  info: "Es el océano más grande. Baña las costas de Chile." },
     { id: "atlantico", nombre: "Océano Atlántico", info: "Está entre América, Europa y África." },
     { id: "indico",    nombre: "Océano Índico",    info: "Está entre África, Asia y Oceanía." },
-    { id: "artico",    nombre: "Océano Ártico",    info: "Está alrededor del Polo Norte." },
-    { id: "antartico", nombre: "Océano Antártico", info: "Rodea a la Antártica, cerca del Polo Sur." }
+    { id: "artico",    nombre: "Océano Ártico",    info: "Está en el extremo norte, alrededor del Polo Norte. Ahí viven los osos polares. También se llama océano Glacial Ártico." },
+    { id: "antartico", nombre: "Océano Antártico", info: "Está en el extremo sur y rodea a la Antártica. También se llama océano Glacial Antártico." }
   ],
 
   /* ------- LÍNEAS DE REFERENCIA, POLOS Y HEMISFERIOS ------- */
@@ -64,6 +73,9 @@ window.DATOS = {
       info: "Está cerca del Polo Norte." },
     { id: "circulo-antartico", tipo: "linea", lat: -66.5, color: "#3949AB", nombre: "Círculo Polar Antártico", conArticulo: "el Círculo Polar Antártico",
       info: "Está cerca del Polo Sur." },
+    // El meridiano es la única línea vertical: va de polo a polo.
+    { id: "greenwich",         tipo: "linea", vertical: true, lon: 0, color: "#2E9E5B", nombre: "Meridiano de Greenwich", conArticulo: "el meridiano de Greenwich",
+      info: "Es una línea vertical que va de polo a polo. Divide la Tierra en hemisferio oeste y hemisferio este." },
     { id: "polo-norte",        tipo: "polo",  lat: 90,    nombre: "Polo Norte", conArticulo: "el Polo Norte",
       info: "Es el punto más al norte de la Tierra. En el mapa está arriba." },
     { id: "polo-sur",          tipo: "polo",  lat: -90,   nombre: "Polo Sur",   conArticulo: "el Polo Sur",
@@ -80,8 +92,8 @@ window.DATOS = {
      Cada lugar va en una casilla distinta. Las preguntas de esta sección
      se crean solas a partir de esta lista. */
   cuadricula: {
-    columnas: ["A", "B", "C", "D", "E", "F"],
-    filas: 5,
+    columnas: ["A", "B", "C", "D", "E", "F", "G", "H"],
+    filas: 6,
     lugares: [
       { id: "cerro",     emoji: "⛰️", etiqueta: "Cerro",      nombre: "el cerro",      celda: "A1" },
       { id: "arbol",     emoji: "🌳", etiqueta: "Árbol",      nombre: "el árbol",      celda: "C1" },
@@ -100,7 +112,15 @@ window.DATOS = {
       { id: "almacen",   emoji: "🏪", etiqueta: "Almacén",    nombre: "el almacén",    celda: "A5" },
       { id: "bomberos",  emoji: "🚒", etiqueta: "Bomberos",   nombre: "los bomberos",  celda: "C5" },
       { id: "helados",   emoji: "🍦", etiqueta: "Heladería",  nombre: "la heladería",  celda: "E5" },
-      { id: "paradero",  emoji: "🚌", etiqueta: "Paradero",   nombre: "el paradero",   celda: "F5" }
+      { id: "paradero",  emoji: "🚌", etiqueta: "Paradero",   nombre: "el paradero",   celda: "F5" },
+      { id: "carpa",     emoji: "⛺", etiqueta: "Carpa",      nombre: "la carpa",      celda: "H1" },
+      { id: "zoologico", emoji: "🦁", etiqueta: "Zoológico",  nombre: "el zoológico",  celda: "G2" },
+      { id: "piscina",   emoji: "🏊", etiqueta: "Piscina",    nombre: "la piscina",    celda: "H3" },
+      { id: "plaza",     emoji: "⛲", etiqueta: "Plaza",      nombre: "la plaza",      celda: "G4" },
+      { id: "gallina",   emoji: "🐔", etiqueta: "Gallina",    nombre: "la gallina",    celda: "H5" },
+      { id: "panaderia", emoji: "🥖", etiqueta: "Panadería",  nombre: "la panadería",  celda: "B6" },
+      { id: "biblioteca",emoji: "📚", etiqueta: "Biblioteca", nombre: "la biblioteca", celda: "D6" },
+      { id: "globo",     emoji: "🎈", etiqueta: "Globo",      nombre: "el globo",      celda: "G6" }
     ]
   },
 
@@ -115,6 +135,8 @@ window.DATOS = {
         texto: ["El Sol sale por el Este 🌅", "y se esconde por el Oeste 🌇"] },
       { titulo: "La cuadrícula", visual: "cuadricula-ejemplo",
         texto: ["Las columnas tienen letras.", "Las filas tienen números.", "Primero la letra, después el número: C3."] },
+      { titulo: "Seguir instrucciones", visual: "cuadricula-ruta",
+        texto: ["Parte en la casa 🏠 (B2).", "Avanza 2 espacios al este.", "Luego avanza 1 espacio al sur.", "¡Llegas a la cancha ⚽ (D3)!"] },
       { titulo: "¡Explora la cuadrícula!", visual: "cuadricula-explorar",
         texto: ["Toca una casilla.", "Te digo su nombre y qué hay."] }
     ],
@@ -125,16 +147,22 @@ window.DATOS = {
         texto: ["El Ecuador corta la Tierra en dos mitades.", "Arriba: hemisferio norte.", "Abajo: hemisferio sur."] },
       { titulo: "Trópicos y círculos polares", visual: "mapa-lineas",
         texto: ["Trópico de Cáncer: al norte del Ecuador.", "Trópico de Capricornio: al sur del Ecuador.", "Los círculos polares están cerca de los polos."] },
+      { titulo: "Ártico arriba, Antártico abajo", visual: "mapa-polares",
+        texto: ["Círculo Polar Ártico: arriba, cerca del Polo Norte ❄️.", "Círculo Polar Antártico: abajo, cerca del Polo Sur.", "Truco: ANTártico está junto a la ANTártica, abajo."] },
+      { titulo: "El meridiano de Greenwich", visual: "mapa-greenwich",
+        texto: ["Es la única línea vertical: va de polo a polo.", "Divide la Tierra en hemisferio oeste y hemisferio este."] },
       { titulo: "¡Explora las líneas!", visual: "mapa-lineas-explorar",
         texto: ["Toca una línea o un polo.", "Toca el mapa para ver el hemisferio."] }
     ],
     3: [
       { titulo: "Los continentes", visual: "mapa-continentes",
-        texto: ["Son grandes extensiones de tierra.", "Cada uno tiene su color."] },
-      { titulo: "Las tres Américas", visual: "mapa-americas",
-        texto: ["América del Norte llega hasta México.", "América Central va de Guatemala a Panamá.", "América del Sur empieza en Colombia."] },
+        texto: ["Son grandes extensiones de tierra.", "Hay 6: América, África, Europa, Asia, Oceanía y Antártica."] },
+      { titulo: "América tiene tres partes", visual: "mapa-americas",
+        texto: ["América es un solo continente.", "América del Norte llega hasta México.", "América Central va de Guatemala a Panamá.", "América del Sur empieza en Colombia."] },
       { titulo: "Los océanos", visual: "mapa-oceanos",
-        texto: ["Son grandes masas de agua salada.", "Hay cinco: Pacífico, Atlántico, Índico, Ártico y Antártico."] },
+        texto: ["Son grandes masas de agua salada.", "Hay 5: Pacífico, Atlántico, Índico, Ártico y Antártico."] },
+      { titulo: "¡No los confundas!", visual: "mapa-artico",
+        texto: ["Océano Ártico: arriba, en el extremo norte. Ahí viven los osos polares 🐻.", "Océano Antártico: abajo, en el extremo sur, alrededor de la Antártica 🐧.", "También se llaman océano Glacial Ártico y Glacial Antártico."] },
       { titulo: "¡Explora el mapa!", visual: "mapa-explorar",
         texto: ["Toca un continente o un océano.", "Te digo cómo se llama."] }
     ],
@@ -161,6 +189,7 @@ window.DATOS = {
      Formato de pregunta para tocar el mapa:
        { tipo: "tocar", capa: "continentes" | "oceanos",
          texto: "...", respuesta: "id de la zona", explicacion: "...", tema: "..." }
+       (con respuesta: "america" vale tocar cualquiera de las tres partes de América)
   */
   preguntas: {
     seccion2: [
@@ -190,7 +219,16 @@ window.DATOS = {
         explicacion: "El Trópico de Cáncer está más arriba que el Ecuador y Capricornio.", tema: "Trópicos", mostrar: ["cancer"] },
       { texto: "¿En qué hemisferio está el Trópico de Capricornio?",
         opciones: ["Hemisferio norte", "Hemisferio sur"], respuesta: "Hemisferio sur",
-        explicacion: "Capricornio está abajo del Ecuador: en el hemisferio sur.", tema: "Hemisferios", mostrar: ["capricornio", "hs"] }
+        explicacion: "Capricornio está abajo del Ecuador: en el hemisferio sur.", tema: "Hemisferios", mostrar: ["capricornio", "hs"] },
+      { texto: "¿Qué línea va de polo a polo, de arriba hacia abajo?",
+        opciones: ["Meridiano de Greenwich", "Línea del Ecuador", "Trópico de Cáncer"], respuesta: "Meridiano de Greenwich",
+        explicacion: "El meridiano de Greenwich es vertical: une el Polo Norte con el Polo Sur.", tema: "Meridiano de Greenwich", mostrar: ["greenwich"] },
+      { texto: "¿Qué línea divide la Tierra en hemisferio oeste y hemisferio este?",
+        opciones: ["Meridiano de Greenwich", "Línea del Ecuador", "Trópico de Capricornio"], respuesta: "Meridiano de Greenwich",
+        explicacion: "El Ecuador separa norte y sur; el meridiano de Greenwich separa oeste y este.", tema: "Meridiano de Greenwich", mostrar: ["greenwich"] },
+      { texto: "¿Qué círculo polar está en el hemisferio norte?",
+        opciones: ["Círculo Polar Ártico", "Círculo Polar Antártico"], respuesta: "Círculo Polar Ártico",
+        explicacion: "El Ártico está arriba (norte). El Antártico está abajo (sur).", tema: "Círculos polares", mostrar: ["circulo-artico", "hn"] }
     ],
 
     seccion3: [
@@ -202,7 +240,25 @@ window.DATOS = {
         explicacion: "La Antártica está en el Polo Sur y está cubierta de hielo.", tema: "Antártica", mostrar: ["antartica"] },
       { texto: "¿Cuál es el continente más grande?",
         opciones: ["Asia", "Europa", "Oceanía"], respuesta: "Asia",
-        explicacion: "Asia es el continente más grande.", tema: "Asia", mostrar: ["asia"] }
+        explicacion: "Asia es el continente más grande.", tema: "Asia", mostrar: ["asia"] },
+      { texto: "¿Cuántos continentes hay?",
+        opciones: ["5", "6", "7"], respuesta: "6",
+        explicacion: "Son 6: América, África, Europa, Asia, Oceanía y Antártica.", tema: "Continentes" },
+      { texto: "¿Cuántos océanos hay?",
+        opciones: ["4", "5", "6"], respuesta: "5",
+        explicacion: "Son 5: Pacífico, Atlántico, Índico, Ártico y Antártico.", tema: "Océanos" },
+      { texto: "¿En cuántas partes se divide América?",
+        opciones: ["2", "3", "4"], respuesta: "3",
+        explicacion: "América del Norte, América Central y América del Sur.", tema: "Las tres Américas", mostrar: ["norteamerica", "centroamerica", "sudamerica"] },
+      { texto: "¿Qué océano está en el extremo norte de la Tierra?",
+        opciones: ["Océano Ártico", "Océano Antártico", "Océano Índico"], respuesta: "Océano Ártico",
+        explicacion: "El Ártico está arriba, en el norte. El Antártico está abajo, junto a la Antártica.", tema: "Ártico y Antártico", mostrar: ["artico"] },
+      { texto: "¿Qué océano está en el extremo sur de la Tierra?",
+        opciones: ["Océano Antártico", "Océano Ártico", "Océano Atlántico"], respuesta: "Océano Antártico",
+        explicacion: "El Antártico rodea a la Antártica, abajo en el sur.", tema: "Ártico y Antártico", mostrar: ["antartico"] },
+      { texto: "¿Qué continente está en el extremo sur del planeta?",
+        opciones: ["Antártica", "Oceanía", "África"], respuesta: "Antártica",
+        explicacion: "La Antártica está abajo, en el Polo Sur.", tema: "Antártica", mostrar: ["antartica"] }
     ],
 
     seccion4: [
@@ -278,6 +334,40 @@ window.DATOS = {
       { texto: "¿Qué continente está más cerca del Polo Sur?",
         opciones: ["Antártica", "África", "Europa"], respuesta: "Antártica",
         explicacion: "La Antártica está justo en el Polo Sur.", tema: "Continentes vecinos", mostrar: ["antartica", "polo-sur"] },
+      // --- Adivinanzas como las del cuaderno ---
+      { texto: "Aurora ama a los osos polares 🐻. Viajará al océano que está en el extremo norte de la Tierra. ¿Cuál es?",
+        opciones: ["Océano Ártico", "Océano Antártico", "Océano Índico"], respuesta: "Océano Ártico",
+        explicacion: "El Ártico está arriba, en el extremo norte. ¡Ahí viven los osos polares!", tema: "Ártico y Antártico", mostrar: ["artico"] },
+      { texto: "Tom va de excursión al continente que está en el extremo sur del planeta. ¿Cuál es?",
+        opciones: ["Antártica", "Oceanía", "América"], respuesta: "Antártica",
+        explicacion: "La Antártica está abajo, en el extremo sur.", tema: "Continentes vecinos", mostrar: ["antartica"] },
+      { texto: "Hay un pueblo que vive en un continente al este de Asia y al oeste de Europa. ¿Qué continente es?",
+        opciones: ["América", "África", "Oceanía"], respuesta: "América",
+        explicacion: "América está al oeste de Europa (cruzando el Atlántico) y al este de Asia (cruzando el Pacífico).", tema: "Continentes vecinos", mostrar: ["norteamerica", "centroamerica", "sudamerica"] },
+      { texto: "Karla conoce todos los continentes, menos el que está al norte de África y al oeste de Asia. ¿Cuál le falta?",
+        opciones: ["Europa", "América", "Antártica"], respuesta: "Europa",
+        explicacion: "Europa está arriba (norte) de África y a la izquierda (oeste) de Asia.", tema: "Continentes vecinos", mostrar: ["europa"] },
+      { texto: "Magali viajó en crucero por un océano que baña las costas de Asia y también las de América. ¿Cuál es?",
+        opciones: ["Océano Pacífico", "Océano Atlántico", "Océano Índico"], respuesta: "Océano Pacífico",
+        explicacion: "El Pacífico está entre Asia (al oeste) y América (al este).", tema: "Océanos entre continentes", mostrar: ["pacifico"] },
+      { texto: "Bruno visitará el continente que limita con Europa por el este. ¿Cuál es?",
+        opciones: ["Asia", "África", "América"], respuesta: "Asia",
+        explicacion: "Al este (derecha) de Europa está Asia.", tema: "Continentes vecinos", mostrar: ["asia", "europa"] },
+      { texto: "Madagascar es una isla en el océano que está al este de África y al oeste de Oceanía. ¿Qué océano es?",
+        opciones: ["Océano Índico", "Océano Atlántico", "Océano Pacífico"], respuesta: "Océano Índico",
+        explicacion: "Entre África y Oceanía está el océano Índico.", tema: "Océanos entre continentes", mostrar: ["indico"] },
+      { texto: "¿Hacia qué punto cardinal de Chile está el océano Pacífico?",
+        opciones: ["Oeste", "Este", "Norte", "Sur"], respuesta: "Oeste",
+        explicacion: "El Pacífico está a la izquierda de Chile: al oeste.", tema: "Chile en el mapa", mostrar: ["pacifico"], marcar: "chile" },
+      { texto: "¿Qué océano está entre América y Europa?",
+        opciones: ["Océano Atlántico", "Océano Pacífico", "Océano Ártico"], respuesta: "Océano Atlántico",
+        explicacion: "El Atlántico separa a América de Europa y África.", tema: "Océanos entre continentes", mostrar: ["atlantico"] },
+      { tipo: "tocar", capa: "continentes",
+        texto: "Toca el continente que está al este de Asia y al oeste de Europa.", respuesta: "america",
+        explicacion: "Es América (cualquiera de sus tres partes).", tema: "Continentes vecinos" },
+      { tipo: "tocar", capa: "oceanos",
+        texto: "Toca el océano donde viven los osos polares, en el extremo norte.", respuesta: "artico",
+        explicacion: "El Ártico está arriba, en el extremo norte.", tema: "Ártico y Antártico" },
       { tipo: "tocar", capa: "oceanos",
         texto: "Toca el océano que está al oeste de América del Sur.", respuesta: "pacifico",
         explicacion: "A la izquierda (oeste) de América del Sur está el Pacífico.", tema: "Océanos alrededor de América" },
